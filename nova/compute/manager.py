@@ -251,6 +251,10 @@ CONF.import_opt('base_url', 'nova.console.serial', group='serial_console')
 CONF.import_opt('destroy_after_evacuate', 'nova.utils', group='workarounds')
 CONF.import_opt('scheduler_tracks_instance_changes',
                 'nova.scheduler.host_manager')
+CONF.import_opt('vrde_password_length',
+                'nova.virt.virtualbox.consoleops', group='virtualbox')
+CONF.import_opt('vrde_require_instance_uuid_as_password',
+                'nova.virt.virtualbox.consoleops', group='virtualbox')
 
 LOG = logging.getLogger(__name__)
 
@@ -4640,6 +4644,12 @@ class ComputeManager(manager.Manager):
             # For essex, novncproxy_base_url must include the full path
             # including the html file (like http://myhost/vnc_auto.html)
             access_url = '%s?token=%s' % (CONF.novncproxy_base_url, token)
+            if CONF.virtualbox.vrde_require_instance_uuid_as_password:
+                password = instance.uuid
+                if CONF.virtualbox.vrde_password_length:
+                    password = password[:CONF.virtualbox.vrde_password_length]
+                access_url = ("%(base_url)s&password=%(password)s" %
+                              {"base_url": access_url, "password": password})
         elif console_type == 'xvpvnc':
             access_url = '%s?token=%s' % (CONF.xvpvncproxy_base_url, token)
         else:
